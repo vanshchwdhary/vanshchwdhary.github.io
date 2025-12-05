@@ -1,5 +1,5 @@
-import emailjs from "emailjs-com";
 import { useRef, useState } from "react";
+import emailjs from "@emailjs/browser";
 
 export default function Contact() {
   const formRef = useRef();
@@ -7,21 +7,34 @@ export default function Contact() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Replace these if you ever want to use env variables
+  // Replace these with your own values or move to env variables
   const SERVICE_ID = "service_b7o85vi";
   const TEMPLATE_ID = "template_zweky15";
   const PUBLIC_KEY = "XXERAmQWva417C0qQ";
+
+  // Optional: initialize the EmailJS client once. This is safe to call multiple times.
+  try {
+    if (emailjs && typeof emailjs.init === "function") {
+      emailjs.init(PUBLIC_KEY);
+    }
+  } catch (e) {
+    // non-fatal
+    // console.warn('EmailJS init failed', e);
+  }
 
   function validateEmail(email) {
     return /^\S+@\S+\.\S+$/.test(email);
   }
 
-  function sendEmail(e) {
+  async function sendEmail(e) {
     e.preventDefault();
     setErrorMsg("");
 
     const form = formRef.current;
-    if (!form) return;
+    if (!form) {
+      setErrorMsg("Form not available.");
+      return;
+    }
 
     const name = form.name?.value?.trim();
     const email = form.email?.value?.trim();
@@ -38,20 +51,18 @@ export default function Contact() {
 
     setLoading(true);
 
-    emailjs
-      .sendForm(SERVICE_ID, TEMPLATE_ID, form, PUBLIC_KEY)
-      .then(
-        () => {
-          setLoading(false);
-          setIsSent(true);
-          form.reset();
-        },
-        (err) => {
-          setLoading(false);
-          console.error("EmailJS error:", err);
-          setErrorMsg("Failed to send message. Please try again later.");
-        }
-      );
+    try {
+      // Use sendForm with explicit public key if necessary. @emailjs/browser supports both patterns.
+      await emailjs.sendForm(SERVICE_ID, TEMPLATE_ID, form, PUBLIC_KEY);
+
+      setIsSent(true);
+      form.reset();
+    } catch (err) {
+      console.error("EmailJS error:", err);
+      setErrorMsg("Failed to send message. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -72,9 +83,7 @@ export default function Contact() {
             {isSent ? (
               <div className="flex flex-col items-start gap-4">
                 <h3 className="text-2xl font-semibold">Message Sent Successfully! 🎉</h3>
-                <p className="opacity-70">
-                  Thanks for reaching out — I’ll get back to you shortly.
-                </p>
+                <p className="opacity-70">Thanks for reaching out — I’ll get back to you shortly.</p>
 
                 <div className="w-full mt-4">
                   <button
@@ -90,7 +99,7 @@ export default function Contact() {
               </div>
             ) : (
               <>
-                <form ref={formRef} onSubmit={sendEmail} className="flex flex-col gap-5">
+                <form ref={formRef} onSubmit={sendEmail} className="flex flex-col gap-5" noValidate>
                   {/* Name */}
                   <div>
                     <label className="text-sm font-medium mb-2 block">Your Name</label>
@@ -99,6 +108,7 @@ export default function Contact() {
                       type="text"
                       placeholder="Enter your name"
                       className="w-full border border-gray-200 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-black"
+                      required
                     />
                   </div>
 
@@ -110,6 +120,7 @@ export default function Contact() {
                       type="email"
                       placeholder="Enter your email"
                       className="w-full border border-gray-200 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-black"
+                      required
                     />
                   </div>
 
@@ -121,13 +132,12 @@ export default function Contact() {
                       rows="6"
                       placeholder="Write your message..."
                       className="w-full border border-gray-200 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-black"
+                      required
                     />
                   </div>
 
                   {/* Error */}
-                  {errorMsg && (
-                    <div className="text-sm text-red-600">{errorMsg}</div>
-                  )}
+                  {errorMsg && <div className="text-sm text-red-600">{errorMsg}</div>}
 
                   {/* Submit */}
                   <button
