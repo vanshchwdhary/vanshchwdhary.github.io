@@ -21,6 +21,13 @@ jobs:
         with:
           node-version: 20
 
+      - name: Improve npm reliability
+        run: |
+          npm config set fetch-retries 10
+          npm config set fetch-retry-factor 3
+          npm config set fetch-retry-mintimeout 10000
+          npm config set fetch-retry-maxtimeout 60000
+
       - name: Install dependencies
         run: npm install
 
