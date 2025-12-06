@@ -3,6 +3,12 @@
   "short_name": "VP",
   "icons": [
     {
+      "src": "favicon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
       "src": "icon-72x72.png",
       "sizes": "72x72",
       "type": "image/png"
